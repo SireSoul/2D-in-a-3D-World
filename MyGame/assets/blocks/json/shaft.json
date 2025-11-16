@@ -1,0 +1,10 @@
+{
+  "name": "Shaft",
+  "id": 1,
+  "texturePath": "assets/blocks/textures/shaft.png",
+  "isSolid": true,
+  "animated": true,
+  "animationFrameCount": 4,
+  "animationSpeed": 6,
+  "tileSize": 16
+}

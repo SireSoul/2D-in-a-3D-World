@@ -9,6 +9,14 @@
 
   <ItemGroup>
     <PackageReference Include="Raylib-cs" Version="7.0.2" />
+    <PackageReference Include="TiledSharp" Version="1.0.1" />
+  </ItemGroup>
+
+  <!-- ADD THIS -->
+  <ItemGroup>
+    <None Update="assets\**\*">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

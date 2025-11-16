@@ -8,6 +8,8 @@ public class Camera
     public Vector2 Position;
     public Vector2 Offset;   // center of the screen
     public float Zoom;
+    public Vector2 CameraVelocity = Vector2.Zero;
+
 
     public Camera(Vector2 offset, float initialZoom)
     {
@@ -18,20 +20,33 @@ public class Camera
 
     public void Follow(Player player)
     {
-        Position = Vector2.Lerp(Position, player.Position, 0.15f);
+        Vector2 toTarget = player.Position - Position;
+
+        float stiffness = 50f;
+        float damping = 0.85f;
+        float dt = Raylib.GetFrameTime();
+
+        CameraVelocity += toTarget * stiffness * dt;
+        CameraVelocity *= damping;
+
+        Position += CameraVelocity * dt;
     }
 
     public void Begin()
     {
-        Camera2D cam = new()
+        float grid = 1f / Zoom;
+
+        // Snap camera position to grid matching the zoom level
+        float snappedX = MathF.Round(Position.X / grid) * grid;
+        float snappedY = MathF.Round(Position.Y / grid) * grid;
+
+        Raylib.BeginMode2D(new Camera2D
         {
-            Target = Position,
+            Target = new Vector2(snappedX, snappedY),
             Offset = Offset,
             Zoom = Zoom,
             Rotation = 0
-        };
-
-        Raylib.BeginMode2D(cam);
+        });
     }
 
     public void End()

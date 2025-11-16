@@ -7,16 +7,20 @@ public class Game
 {
     private Camera camera;
     private Player player;
+    private Map map;
 
     public Game(int width, int height)
     {
-        player = new Player(100, 100);
 
         // Camera offset = center of window
         camera = new Camera(
             new Vector2(width / 2f, height / 2f),
             1f
         );
+        BlockManager.LoadAllBlocks("assets/blocks/json");
+
+        map = new Map("assets/maps/spring_map.tmx");
+        player = new Player(100, 100, map);
     }
 
     public void Update(float dt)
@@ -32,7 +36,8 @@ public class Game
         Raylib.ClearBackground(Color.Black);
 
         camera.Begin();
-        player.Draw();
+        map.Draw();
+        player.Draw(camera.Zoom);
         camera.End();
 
         Raylib.EndDrawing();

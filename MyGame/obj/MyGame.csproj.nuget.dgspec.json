@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "/Users/satya/Documents/GitHub/MedievalFantasyDatapack/2D-in-a-3D-World/MyGame/MyGame.csproj": {}
+    "/Users/satya/Documents/GitHub/2D-in-a-3D-World/MyGame/MyGame.csproj": {}
   },
   "projects": {
-    "/Users/satya/Documents/GitHub/MedievalFantasyDatapack/2D-in-a-3D-World/MyGame/MyGame.csproj": {
+    "/Users/satya/Documents/GitHub/2D-in-a-3D-World/MyGame/MyGame.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/Users/satya/Documents/GitHub/MedievalFantasyDatapack/2D-in-a-3D-World/MyGame/MyGame.csproj",
+        "projectUniqueName": "/Users/satya/Documents/GitHub/2D-in-a-3D-World/MyGame/MyGame.csproj",
         "projectName": "MyGame",
-        "projectPath": "/Users/satya/Documents/GitHub/MedievalFantasyDatapack/2D-in-a-3D-World/MyGame/MyGame.csproj",
+        "projectPath": "/Users/satya/Documents/GitHub/2D-in-a-3D-World/MyGame/MyGame.csproj",
         "packagesPath": "/Users/satya/.nuget/packages/",
-        "outputPath": "/Users/satya/Documents/GitHub/MedievalFantasyDatapack/2D-in-a-3D-World/MyGame/obj/",
+        "outputPath": "/Users/satya/Documents/GitHub/2D-in-a-3D-World/MyGame/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "/Users/satya/.nuget/NuGet/NuGet.Config"
@@ -46,6 +46,10 @@
             "Raylib-cs": {
               "target": "Package",
               "version": "[7.0.2, )"
+            },
+            "TiledSharp": {
+              "target": "Package",
+              "version": "[1.0.1, )"
             }
           },
           "imports": [
