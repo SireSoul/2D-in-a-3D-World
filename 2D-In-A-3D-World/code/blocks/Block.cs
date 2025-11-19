@@ -33,13 +33,17 @@ public abstract class Block
 
     private int currentFrame;
     private float frameTimer;
-
-    public virtual bool AnimateHorizontally => false;  // false = vertical animation
-    public virtual int FramesWide => 1;      // columns
-    public virtual int FramesHigh => 1;      // rows
-    public virtual int AnimationRow => 0;    // which row to animate horizontally in
-    public virtual int AnimationColumn => 0; // which column to animate vertically in
+    public virtual bool AnimateHorizontally => false;
+    public virtual int FramesWide => 1;
+    public virtual int FramesHigh => 1;
+    public virtual int AnimationRow => 0;
+    public virtual int AnimationColumn => 0;
     public virtual bool Rotatable => false;
+    public virtual int MaxHardness => 3;
+    public int Hardness;
+    public bool IsBeingMined = false;
+    public float MineTimer = 0f;
+    public float MineDelay = 0.5f;
 
     public void LoadTexture()
     {
@@ -69,7 +73,6 @@ public abstract class Block
         {
             if (AnimateHorizontally)
             {
-                // horizontal animation
                 src = new Rectangle(
                     currentFrame * TileSize,
                     GetRotationFrame() * TileSize,
@@ -79,7 +82,6 @@ public abstract class Block
             }
             else
             {
-                // vertical animation with rotation controlling column
                 src = new Rectangle(
                     GetRotationFrame() * TileSize,
                     currentFrame * TileSize,
@@ -90,7 +92,6 @@ public abstract class Block
         }
         else
         {
-            // static block, still rotatable
             src = new Rectangle(
                 GetRotationFrame() * TileSize,
                 0,
@@ -98,10 +99,9 @@ public abstract class Block
                 TileSize
             );
         }
-
-        // For now, we ignore Z when drawing (pure top-down).
-        // Later, you can offset by Z or sort draw order by Z.
         Raylib.DrawTextureRec(Texture, src, Position, Color.White);
+        Color tint = IsBeingMined ? new Color(255, 180, 180, 255) : Color.White;
+        Raylib.DrawTextureRec(Texture, src, Position, tint);
     }
 
     public virtual void Rotate()
@@ -133,6 +133,15 @@ public abstract class Block
         return RotationOrder[rotationIndex];
     }
 
+    public virtual Rectangle GetHitbox()
+    {
+        return new Rectangle(
+            Position.X,
+            Position.Y,
+            TileSize,
+            TileSize
+        );
+    }
 
     public virtual void OnPlace() { }
     public virtual void OnBreak() { }

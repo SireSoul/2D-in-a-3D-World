@@ -36,6 +36,7 @@ public static class BlockManager
         // Share the same texture (don’t reload)
         newBlock.Texture = template.Texture;
         newBlock.Position = pos;
+        newBlock.Hardness = newBlock.MaxHardness;
 
         // Apply pending rotation for this block type
         if (newBlock.Rotatable)

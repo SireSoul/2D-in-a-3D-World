@@ -8,7 +8,7 @@ public class Game
     private Camera camera;
     private Player player;
     private Map map;
-    private Block?[,] world;
+    public Block?[,] world;
 
     private DayNightClock Clock;
     RenderTexture2D worldTarget;
@@ -54,9 +54,6 @@ public class Game
 
     public void Update(float dt)
     {
-        // ----------------------------
-        // Open console toggle
-        // ----------------------------
         if (Raylib.IsKeyPressed(KeyboardKey.Slash) || Raylib.IsKeyPressed(KeyboardKey.Grave))
         {
             GameConsole.Toggle();
@@ -68,29 +65,17 @@ public class Game
             return;
         }
 
-        // ----------------------------
-        // Rotate NEXT placed block
-        // ----------------------------
         if (Raylib.IsKeyPressed(KeyboardKey.R))
         {
-            // Rotate next ShaftBlock (ID = 1)
             BlockManager.CyclePendingRotation(1);
         }
 
-        // ----------------------------
-        // Player + camera updates
-        // ----------------------------
         player.Update(dt);
         UIManager.Update(player);
-
         camera.HandleZoomInput(dt);
         camera.Follow(player);
-
         Clock.Update(dt, minutesPerRealSecond: 1f);
 
-        // ----------------------------
-        // Handle block placement
-        // ----------------------------
         if (Raylib.IsMouseButtonDown(MouseButton.Right))
         {
             Vector2 mouse = Raylib.GetMousePosition();
@@ -103,7 +88,6 @@ public class Game
             {
                 if (world[tileX, tileY] == null)
                 {
-                    // Create the block using the template with applied rotation
                     Block block = BlockManager.Create(1, new Vector2(tileX * 16, tileY * 16));
                     world[tileX, tileY] = block;
 
@@ -112,9 +96,53 @@ public class Game
             }
         }
 
-        // ----------------------------
-        // Day/night simulation
-        // ----------------------------
+        if (Raylib.IsMouseButtonDown(MouseButton.Left))
+        {
+            Vector2 mouse = Raylib.GetMousePosition();
+            Vector2 worldPos = Raylib.GetScreenToWorld2D(mouse, camera.ToRaylibCam());
+
+            int tileX = (int)(worldPos.X / 16);
+            int tileY = (int)(worldPos.Y / 16);
+            Block b = world[tileX, tileY];
+
+            if (tileX >= 0 && tileX < 73 && tileY >= 0 && tileY < 55)
+            {
+
+                if (b != null)
+                {
+                    b.IsBeingMined = true;
+                    b.MineTimer += dt;
+                    if (b.MineTimer >= b.MineDelay)
+                    {
+                        b.MineTimer = 0f;
+                        b.Hardness -= 1;
+
+                        if (b.Hardness <= 0)
+                        {
+                            b.OnBreak();
+                            world[tileX, tileY] = null;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (Raylib.IsMouseButtonReleased(MouseButton.Left))
+        {
+            for (int x = 0; x < 73; x++)
+            {
+                for (int y = 0; y < 55; y++)
+                {
+                    Block b = world[x, y];
+                    if (b != null)
+                    {
+                        b.IsBeingMined = false;
+                        b.MineTimer = 0f;
+                    }
+                }
+            }
+        }
+
         timeOfDay += dt * 0.02f;
         if (timeOfDay > 1f) timeOfDay -= 1f;
 
@@ -123,17 +151,14 @@ public class Game
 
     public void Draw()
     {
-        // ----------------------------
-        // Draw the world to the offscreen texture
-        // ----------------------------
         Raylib.BeginTextureMode(worldTarget);
         Raylib.ClearBackground(Color.Black);
 
         camera.Begin();
-
         map.Draw();
 
-        // Draw ALL placed blocks
+        List<Block> drawList = new List<Block>();
+
         for (int x = 0; x < 73; x++)
         {
             for (int y = 0; y < 55; y++)
@@ -141,22 +166,51 @@ public class Game
                 Block b = world[x, y];
                 if (b != null)
                 {
+                    drawList.Add(b);
                     b.Update(Raylib.GetFrameTime());
                     b.Draw();
                 }
             }
         }
 
-        // Draw player
+        drawList.Sort((a, b) =>
+        {
+        float ay = a.Position.Y + a.TileSize;
+        float by = b.Position.Y + b.TileSize;
+        return ay.CompareTo(by);
+        });
+
+        float playerFeet = player.Position.Y + player.Height / 2;
+
+        foreach (var block in drawList)
+        {
+        float blockBottom = block.Position.Y + block.TileSize;
+
+        if (blockBottom < playerFeet)
+        {
+            block.Draw();
+        } else
+        {
+            break;
+        }
+        }
+
         player.Draw(camera.Zoom);
         player.DrawHeldItem();
 
-        camera.End();
-        Raylib.EndTextureMode();
+        foreach (var block in drawList)
+        {
+        float blockBottom = block.Position.Y + block.TileSize;
 
-        // ----------------------------
-        // Now apply the day/night shader
-        // ----------------------------
+        if (blockBottom >= playerFeet)
+        {
+            block.Draw();
+        }
+        }
+
+        camera.End();
+
+        Raylib.EndTextureMode();
         Raylib.BeginDrawing();
         Raylib.ClearBackground(Color.Black);
 
@@ -171,10 +225,6 @@ public class Game
         );
 
         Raylib.EndShaderMode();
-
-        // ----------------------------
-        // UI elements drawn LAST
-        // ----------------------------
         UIManager.Draw(player);
         Clock.Draw();
         GameConsole.Draw();

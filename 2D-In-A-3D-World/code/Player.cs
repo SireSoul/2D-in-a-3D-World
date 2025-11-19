@@ -83,9 +83,17 @@ public class Player {
         if (moving)
         {
             move = Vector2.Normalize(move);
-            Vector2 delta = move * Speed * dt;
-            TryMove(delta.X, 0);
-            TryMove(0, delta.Y);
+            Vector2 attempt = Position + move * Speed * dt;
+
+            Rectangle playerBox = new Rectangle(
+                attempt.X - Size / 2,
+                attempt.Y - Size / 2,
+                Size,
+                Size
+            );
+
+            if (!CollidesWithWorld(playerBox, game))
+                Position = attempt;
         }
 
         // (Optional later: change Z with keys, e.g. Q/E for floors)
@@ -204,41 +212,50 @@ public class Player {
         );
     }
 
-    private void TryMove(float dx, float dy)
+    // private void TryMove(float dx, float dy)
+    // {
+    //     if (dx == 0 && dy == 0) return;
+
+    //     Vector2 newPos = Position + new Vector2(dx, dy);
+
+    //     // Player bounding box
+    //     float half = Size / 3f;
+    //     Rectangle bb = new Rectangle(
+    //         newPos.X - half,
+    //         newPos.Y - half,
+    //         Size,
+    //         Size
+    //     );
+
+    //     // Check collision with world tiles
+    //     if (!CollidesWithWorld(bb))
+    //     {
+    //         Position = newPos;
+    //     }
+    // }
+
+    private bool CollidesWithWorld(Rectangle playerBox, Game game)
     {
-        if (dx == 0 && dy == 0) return;
+        int left   = (int)(playerBox.X / 16) - 1;
+        int right  = (int)((playerBox.X + playerBox.Width) / 16) + 1;
+        int top    = (int)(playerBox.Y / 16) - 1;
+        int bottom = (int)((playerBox.Y + playerBox.Height) / 16) + 1;
 
-        Vector2 newPos = Position + new Vector2(dx, dy);
+        left = Math.Clamp(left, 0, 72);
+        right = Math.Clamp(right, 0, 72);
+        top = Math.Clamp(top, 0, 54);
+        bottom = Math.Clamp(bottom, 0, 54);
 
-        // Player bounding box
-        float half = Size / 3f;
-        Rectangle bb = new Rectangle(
-            newPos.X - half,
-            newPos.Y - half,
-            Size,
-            Size
-        );
-
-        // Check collision with world tiles
-        if (!CollidesWithWorld(bb))
+        for (int x = left; x <= right; x++)
         {
-            Position = newPos;
-        }
-    }
-
-    private bool CollidesWithWorld(Rectangle box)
-    {
-        // tile range to test
-        int left   = (int)MathF.Floor(box.X / 16);
-        int right  = (int)MathF.Floor((box.X + box.Width) / 16);
-        int top    = (int)MathF.Floor(box.Y / 16);
-        int bottom = (int)MathF.Floor((box.Y + box.Height) / 16);
-
-        for (int tx = left; tx <= right; tx++)
-        {
-            for (int ty = top; ty <= bottom; ty++)
+            for (int y = top; y <= bottom; y++)
             {
-                if (game.IsTileSolid(tx, ty))
+                Block? b = game.world[x, y];
+                if (b == null || !b.IsSolid)
+                    continue;
+
+                Rectangle hb = b.GetHitbox();
+                if (Raylib.CheckCollisionRecs(playerBox, hb))
                     return true;
             }
         }
