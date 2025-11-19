@@ -10,7 +10,6 @@ public class Camera
     public float Zoom;
     public Vector2 CameraVelocity = Vector2.Zero;
 
-
     public Camera(Vector2 offset, float initialZoom)
     {
         Offset = offset;
@@ -20,13 +19,14 @@ public class Camera
 
     public void Follow(Player player)
     {
-        Vector2 toTarget = player.Position - Position;
+        // Follow only X/Y for a top-down view
+        Vector2 target = player.Position - Position;
 
         float stiffness = 50f;
         float damping = 0.85f;
         float dt = Raylib.GetFrameTime();
 
-        CameraVelocity += toTarget * stiffness * dt;
+        CameraVelocity += target * stiffness * dt;
         CameraVelocity *= damping;
 
         Position += CameraVelocity * dt;
@@ -55,8 +55,8 @@ public class Camera
 
     public void HandleZoomInput(float dt)
     {
-        if (Raylib.IsKeyDown(KeyboardKey.Minus) && (Raylib.IsKeyDown(KeyboardKey.LeftShift) || Raylib.IsKeyDown(KeyboardKey.RightShift))) {Zoom -= 0.025f;}
-        if (Raylib.IsKeyDown(KeyboardKey.Equal) && (Raylib.IsKeyDown(KeyboardKey.LeftShift) || Raylib.IsKeyDown(KeyboardKey.RightShift))) {Zoom += 0.025f;}
+        if (Raylib.IsKeyDown(KeyboardKey.Minus) && (Raylib.IsKeyDown(KeyboardKey.LeftShift) || Raylib.IsKeyDown(KeyboardKey.RightShift))) { Zoom -= 0.025f; }
+        if (Raylib.IsKeyDown(KeyboardKey.Equal) && (Raylib.IsKeyDown(KeyboardKey.LeftShift) || Raylib.IsKeyDown(KeyboardKey.RightShift))) { Zoom += 0.025f; }
         Zoom = Utils.Clamp(Zoom, 0.5f, 3.0f);
     }
 

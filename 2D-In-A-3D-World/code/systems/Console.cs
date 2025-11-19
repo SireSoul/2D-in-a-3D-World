@@ -10,11 +10,14 @@ public static class GameConsole
     private static string input = "";
 
     public static bool IsOpen => open;
+    public static List<string> Inputs = [];
+    private static int inputIndex = 0;
 
     public static void Toggle()
     {
         open = !open;
         input = "";
+        inputIndex = -1;
     }
 
     public static void Update(Player player)
@@ -39,10 +42,41 @@ public static class GameConsole
         if (Raylib.IsKeyPressed(KeyboardKey.Backspace) && input.Length > 0)
             input = input[..^1];
 
+        // --- UP: go backward in history ---
+        if (Raylib.IsKeyPressed(KeyboardKey.Up))
+        {
+            if (Inputs.Count > 0)
+            {
+                if (inputIndex == -1) {inputIndex = Inputs.Count - 1;}
+                else if (inputIndex > 0) {inputIndex--;}
+                input = Inputs[inputIndex];
+            }
+        }
+
+        // --- DOWN: go forward in history ---
+        if (Raylib.IsKeyPressed(KeyboardKey.Down))
+        {
+            if (Inputs.Count > 0 && inputIndex != -1)
+            {
+                if (inputIndex < Inputs.Count - 1)
+                {
+                    inputIndex++;
+                    input = Inputs[inputIndex];
+                }
+                else
+                {
+                    inputIndex = -1;
+                    input = "/";
+                }
+            }
+        }
+
         // --- Execute Command ---
         if (Raylib.IsKeyPressed(KeyboardKey.Enter))
         {
             Execute(input, player);
+            Inputs.Add(input);
+            inputIndex = -1;
             input = "";
             open = false;
             return;
@@ -53,6 +87,7 @@ public static class GameConsole
         {
             input = "";
             open = false;
+            inputIndex = 0;
             return;
         }
     }

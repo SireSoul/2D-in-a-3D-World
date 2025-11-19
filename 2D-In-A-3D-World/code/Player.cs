@@ -5,6 +5,20 @@ using System.Numerics;
 
 public class Player {
     public Vector2 Position;
+    public float Z { get; set; } = 0f;
+
+    private Game game;
+
+    public Vector3 Position3D
+    {
+        get => new Vector3(Position.X, Position.Y, Z);
+        set
+        {
+            Position = new Vector2(value.X, value.Y);
+            Z = value.Z;
+        }
+    }
+
     public float Width;
     public float Height;
     public Vector2 Velocity;
@@ -29,10 +43,17 @@ public class Player {
     private float frameSpeed = 0.075f;
     private int currentFrame = 0;
     private int currentDirection = 2;
+    public float VerticalVelocity = 0f;          // upward/downward movement
+    public float Gravity = 450f;                 // how fast player falls
+    public float JumpForce = 200f;               // how strong the jump is
+    public bool IsGrounded => Z <= 0.01f;        // touching the floor
 
-    public Player(float x, float y, Map gameMap)
+    public Player(float x, float y, Map gameMap, Game game)
     {
         Position = new Vector2(x, y);
+        Z = 0f; // start on ground level
+        this.game = game;
+
         map = gameMap;
         X = x;
         Y = y;
@@ -51,6 +72,7 @@ public class Player {
         bool moving = false;
         Vector2 move = Vector2.Zero;
 
+        // --- 2D movement (X/Y plane). Z stays the same unless you decide otherwise.
         if (Raylib.IsKeyDown(KeyboardKey.W)) { move.Y -= 1; currentDirection = 1; }
         if (Raylib.IsKeyDown(KeyboardKey.S)) { move.Y += 1; currentDirection = 0; }
         if (Raylib.IsKeyDown(KeyboardKey.A)) { move.X -= 1; currentDirection = 3; }
@@ -61,9 +83,12 @@ public class Player {
         if (moving)
         {
             move = Vector2.Normalize(move);
-            Position += move * Speed * dt;
+            Vector2 delta = move * Speed * dt;
+            TryMove(delta.X, 0);
+            TryMove(0, delta.Y);
         }
 
+        // (Optional later: change Z with keys, e.g. Q/E for floors)
 
         Texture2D activeTexture = moving ? WalkTexture : IdleTexture;
         int frameCount = moving ? walkFrames : idleFrames;
@@ -98,10 +123,28 @@ public class Player {
         float half = Size / 2;
         Position.X = Math.Clamp(Position.X, half, map.PixelWidth - half);
         Position.Y = Math.Clamp(Position.Y, half, map.PixelHeight - half);
+
+        // --- Apply gravity ---
+        VerticalVelocity -= Gravity * dt;
+        Z += VerticalVelocity * dt;
+
+        // Clamp and reset when hitting the floor
+        if (Z < 0f)
+        {
+            Z = 0f;
+            VerticalVelocity = 0f;
+        }
+
+        // --- Jump input ---
+        if (Raylib.IsKeyDown(KeyboardKey.Space) && IsGrounded)
+        {
+            VerticalVelocity = JumpForce;   // go up!
+        }
     }
+
     public void Draw(float zoom)
     {
-        bool moving = 
+        bool moving =
             Raylib.IsKeyDown(KeyboardKey.W) ||
             Raylib.IsKeyDown(KeyboardKey.A) ||
             Raylib.IsKeyDown(KeyboardKey.S) ||
@@ -117,12 +160,13 @@ public class Player {
             frameHeight
         );
 
-        Raylib.DrawTextureRec(
-            activeTexture,
-            src,
-            new Vector2(Position.X - frameWidth / 2, Position.Y - frameHeight / 2),
-            Color.White
+        // NOTE: still rendering in 2D using X/Y. Z can later be used for layering.
+        Vector2 drawPos = new Vector2(
+            Position.X - frameWidth / 2,
+            Position.Y - frameHeight / 2 - Z      // subtract Z to lift the player
         );
+
+        Raylib.DrawTextureRec(activeTexture, src, drawPos, Color.White);
     }
 
     public void SyncHotbar()
@@ -158,5 +202,47 @@ public class Player {
             itemScale,
             Color.White
         );
+    }
+
+    private void TryMove(float dx, float dy)
+    {
+        if (dx == 0 && dy == 0) return;
+
+        Vector2 newPos = Position + new Vector2(dx, dy);
+
+        // Player bounding box
+        float half = Size / 3f;
+        Rectangle bb = new Rectangle(
+            newPos.X - half,
+            newPos.Y - half,
+            Size,
+            Size
+        );
+
+        // Check collision with world tiles
+        if (!CollidesWithWorld(bb))
+        {
+            Position = newPos;
+        }
+    }
+
+    private bool CollidesWithWorld(Rectangle box)
+    {
+        // tile range to test
+        int left   = (int)MathF.Floor(box.X / 16);
+        int right  = (int)MathF.Floor((box.X + box.Width) / 16);
+        int top    = (int)MathF.Floor(box.Y / 16);
+        int bottom = (int)MathF.Floor((box.Y + box.Height) / 16);
+
+        for (int tx = left; tx <= right; tx++)
+        {
+            for (int ty = top; ty <= bottom; ty++)
+            {
+                if (game.IsTileSolid(tx, ty))
+                    return true;
+            }
+        }
+
+        return false;
     }
 }
